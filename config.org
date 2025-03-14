@@ -1,0 +1,362 @@
+ICXC + NIKA
+ 
+* Funciones generales
+** Gestor de basura
+#+begin_src emacs-lisp
+      (defmacro k-time (&rest body)
+	"Measure and return the time it takes evaluating BODY."
+	`(let ((time (current-time)))
+	   ,@body
+	   (float-time (time-since time))))
+
+      ;; Set garbage collection threshold to 200MB.
+      (setq gc-cons-threshold 200000000)
+
+      ;; When idle for 15sec run the GC no matter what.
+      (defvar k-gc-timer
+	(run-with-idle-timer 2 t
+			     (lambda ()
+			       ;;(message "El recolector de basura trabajó por %.06fsegs"
+					(k-time (garbage-collect))
+					;;)
+			       )))
+#+end_src
+
+** Gestor de paquetes
+#+begin_src emacs-lisp
+  (require 'package)
+  (setq package-archives '(
+			   ;;("melpa-stable" . "https://stable.melpa.org/packages/")
+			   ("melpa" . "https://melpa.org/packages/")
+			   ("org" . "https://orgmode.org/elpa/")
+			   ("elpa" . "https://elpa.gnu.org/packages/")))
+
+  (package-initialize)
+  (unless package-archive-contents
+    (package-refresh-contents))
+
+  (unless (package-installed-p 'use-package)
+    (package-install 'use-package))
+
+  (require 'use-package)
+  (setq use-package-always-ensure t)
+#+end_src
+
+** Inicialización
+#+begin_src emacs-lisp
+  (setq inhibit-startup-echo-area-message "tychoish")
+  (setq inhibit-startup-message 't)
+
+  (setq inhibit-startup-message t)
+  (setq initial-major-mode 'org-mode)
+#+end_src
+
+** Historial de archivos
+#+begin_src emacs-lisp
+  (recentf-mode 1) ;; Guardar historial de archivos
+  (setq recentf-max-menu-items 25)
+  (setq recentf-max-saved-items 25)
+  (global-set-key "\C-x\ \C-r" 'recentf-open-files) ;; Atajo para abrir archivos recientes
+#+end_src
+
+** Manipulación de texto
+#+begin_src emacs-lisp
+  (electric-pair-mode t) ;; Cerrar automáticamente los paréntesis etc
+  (delete-selection-mode t)
+#+end_src
+
+** Mejorar scroll
+#+begin_src emacs-lisp
+  (use-package ultra-scroll
+  ;:load-path "~/code/emacs/ultra-scroll" ; if you git clone'd instead of package-vc-install
+  :init
+  (setq scroll-conservatively 101 ; important!
+        scroll-margin 0) 
+  :config
+  (ultra-scroll-mode 1))
+#+end_src
+** Yasnippet
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :config
+    (setq yas-snippet-dir '("~/.config/emacs/snippets"))
+    (yas-global-mode 1))
+#+end_src
+
+** Autocompletado
+#+begin_src emacs-lisp
+  (use-package auto-complete
+    :config (ac-flyspell-workaround))
+  (ac-config-default)
+  (add-to-list 'ac-modes 'org-mode)
+  (define-key yas-minor-mode-map (kbd "<tab>") nil)
+  (define-key yas-minor-mode-map (kbd "TAB") nil)
+  (define-key yas-minor-mode-map (kbd "<C-tab>") 'yas-expand)
+  (setq ac-auto-start 1)
+  ;;   (ac-set-trigger-key "TAB")
+  ;; (ac-set-trigger-key "<tab>")
+  (defun autorg ()
+    (setq ac-sources '(ac-source-yasnippet)))
+
+  (add-hook 'org-mode-hook 'autorg)
+ #+end_src
+* Apariencia
+** Tema
+#+begin_src emacs-lisp
+  (setq custom-safe-themes t)
+  (use-package modus-themes)
+  (use-package ef-themes)
+  (mapc #'disable-theme custom-enabled-themes)
+  (load-theme 'standard-light :no-confirm)
+
+  (use-package auto-dark
+    :custom
+    (auto-dark-themes '((standard-dark) (standard-light)))
+    :init (auto-dark-mode))
+#+end_src
+
+** Tipografías por defecto, etc.
+#+begin_src emacs-lisp
+  (use-package nerd-icons)
+  (use-package all-the-icons)
+#+end_src
+
+#+begin_src emacs-lisp
+    (set-face-attribute 'default nil
+  		      :family "Iosevka Fixed Curly Slab"
+  		      :weight 'medium
+  		      :height 180)
+  (set-face-attribute 'fixed-pitch nil
+  		      :family "Iosevka Fixed Curly Slab"
+  		      :weight 'medium
+  		      :height 180)
+    (set-face-attribute 'variable-pitch nil
+  		      :family "EB Garamond"
+  		      :height 240)
+
+    ;; (set-face-attribute 'mode-line nil
+    ;; 		      :family "Iosevka Fixed Curly Slab"
+    ;; 		      :weight 'medium
+    ;; 		      :height 140)
+#+end_src
+
+** Modeline
+*** General
+#+begin_src emacs-lisp
+  (display-battery-mode 1)
+  (setq display-time-default-load-average 'nil)
+  (display-time-mode 1)
+#+end_src
+*** Doom-modeline
+#+begin_src emacs-lisp
+    (use-package doom-modeline
+      :ensure t
+      :init (doom-modeline-mode 1)
+      )
+
+    (doom-modeline-def-segment posicion-buffer
+      "The buffer position information."
+      (let ((visible (doom-modeline--segment-visible 'buffer-position))
+	    (sep (doom-modeline-spc))
+	    (wsep (doom-modeline-wspc))
+	    (face (doom-modeline-face))
+	    (help-echo "Buffer percentage\n\
+		mouse-1: Display Line and Column Mode Menu")
+	    (mouse-face 'doom-modeline-highlight)
+	    (local-map mode-line-column-line-number-mode-map))
+	`(,wsep
+	  ;; Percent position
+	  (doom-modeline-percent-position
+	   ((:propertize ("" doom-modeline-percent-position)
+			 face ,face
+			 help-echo ,help-echo
+			 mouse-face ,mouse-face
+			 local-map ,local-map)
+	    ,sep))
+	  ;; Position
+	  (,visible
+	   ,(cond
+	     ((bound-and-true-p nyan-mode)
+	      (concat sep (nyan-create) sep))
+	     (t "")))
+	  )))
+
+    (doom-modeline-def-segment conteo-palabras
+      "The buffer word count.
+	Displayed when in a major mode in `doom-modeline-continuous-word-count-modes'.
+	Respects `doom-modeline-enable-word-count'."
+      (when (and doom-modeline-enable-word-count
+		 (member major-mode doom-modeline-continuous-word-count-modes))
+	(propertize (format " %d palabras" (count-words (point-min) (point-max)))
+		    'face (doom-modeline-face))))
+
+    (doom-modeline-def-modeline 'main
+      '(eldoc workspace-name window-number modals matches follow buffer-info remote-host posicion-buffer)
+      '(compilation
+	objed-state misc-info project-name persp-name grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info process vcs conteo-palabras parrot time battery))
+    (setq doom-modeline-height 28)
+    (setq doom-modeline-buffer-modification-icon nil)
+    (setq doom-modeline-buffer-state-icon t)
+    (setq doom-modeline-time-icon nil)
+    ;;  (setq doom-modeline-time-live-icon t)
+    (setq doom-modeline-battery t)  
+    (setq doom-modeline-enable-word-count t)
+    (setq doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+    (setq mode-line-right-align-edge 'right-fringe)
+    (line-number-mode 0)
+#+end_src
+
+*** Nyan-mode
+#+begin_src emacs-lisp
+  (use-package nyan-mode)
+  (setq nyan-animate-nyancat t)
+  (setq nyan-wavy-trail t)
+  (nyan-mode)
+  (nyan-start-animation)
+#+end_src
+
+** Interfaz
+#+begin_src emacs-lisp
+    (tool-bar-mode -1)
+    (menu-bar-mode -1)
+    (setq use-dialog-box nil)
+    (scroll-bar-mode -1)
+    (tooltip-mode -1)
+    (setq server-client-instructions nil)
+    (setq frame-inhibit-implied-resize t)
+  (setq-default cursor-type '(bar . 2))
+#+end_src
+
+** Dashboard
+#+begin_src emacs-lisp
+  (use-package dashboard
+    :ensure t
+    :config
+    (dashboard-setup-startup-hook))
+
+  (setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name)))
+  (setq dashboard-banner-logo-title "Live free or die")
+  (setq dashboard-startup-banner '("~/Imágenes/gnus/listen.jpg" "~/Imágenes/gnus/head.jpg" "~/Imágenes/gnus/meditate.jpg" "~/Imágenes/gnus/dog.jpg"))
+  (setq dashboard-image-banner-max-width 800)
+  (setq dashboard-image-banner-max-height 400)
+  (setq dashboard-items '((recents   . 3)))
+
+  (setq dashboard-item-names '(("Recent Files:" . "Archivos recientes:")))
+  (setq dashboard-icon-type 'all-the-icons)  ; use `all-the-icons' package
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+  (dashboard-modify-heading-icons '((recents   . "file-text")))
+
+#+end_src
+
++begin_src emacs-lisp
+  (use-package welcome-dashboard
+    :ensure nil ;; when using local file and not straight nor use-package
+    :config
+    (setq welcome-dashboard-latitude 4.80938
+          welcome-dashboard-longitude -74.098     ;; latitude and longitude must be set to show weather information
+          welcome-dashboard-use-nerd-icons t      ;; Use nerd icons instead of all-the-icons
+          welcome-dashboard-path-max-length 75
+          welcome-dashboard-show-file-path t      ;; Hide or show filepath
+          welcome-dashboard-use-fahrenheit nil    ;; show in celcius or fahrenheit.
+          welcome-dashboard-min-left-padding 10
+          welcome-dashboard-image-file "~/Imágenes/640px-Gnu-listen-half.jpg"
+          welcome-dashboard-image-width 200
+          ;; welcome-dashboard-image-height 169
+          welcome-dashboard-max-number-of-todos 5
+          welcome-dashboard-title (concat "Bienvenido " user-full-name))
+    (welcome-dashboard-create-welcome-hook))
++end_src
+
+* Org-mode
+** Modo centrado
+#+begin_src emacs-lisp
+      (use-package visual-fill-column
+	:hook (org-mode . org-appear-mode)
+	:config
+	(setq-default visual-fill-column-width 72))
+      (setq-default visual-fill-column-center-text t)
+      (setq visual-fill-column-enable-sensible-window-split t)
+      (use-package adaptive-wrap
+	:hook (org-mode . org-appear-mode))
+#+end_src
+
+** Estilo de los encabezados
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :hook (org-mode . org-appear-mode))
+#+end_src
+
+** Mejorar visualización de ciertas cosas
+#+begin_src emacs-lisp
+    (setq-default org-hide-emphasis-markers t
+		  org-pretty-entities t
+		  org-use-sub-superscripts "{}"
+		  org-startup-with-inline-images t
+		  org-image-actual-width 300
+		  )
+    ;;(font-lock-add-keywords 'org-mode
+    ;;'(("^ *\\([-]\\) "
+    ;;(0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+  (use-package org-appear
+      :hook (org-mode . org-appear-mode))
+    (setq org-ellipsis " ☜")
+#+end_src
+
++begin_src emacs-lisp
+    (use-package org-modern
+      :hook (org-mode . org-modern-mode))
+;;      (add-hook 'org-mode-hook #'org-modern-mode)
++end_src
+
+** Ajustes tipográficos
+#+begin_src emacs-lisp
+  (use-package org-faces
+    :hook (org-mode . org-appear-mode)
+    :ensure nil
+    :custom-face
+    (org-checkbox ((nil (:inherit fixed-pitch))))
+    (org-block ((nil (:inherit (fixed-pitch) :height 0.8))))
+    (org-code ((nil (:inherit (shadow fixed-pitch)))))
+    (org-indent ((nil (:inherit (org-hide fixed-pitch)))))
+    (org-meta-line ((nil (:inherit (font-lock-comment-face fixed-pitch)))))
+    (org-property-value ((nil (:inherit fixed-pitch))))
+    (org-special-keyword ((nil (:inherit (font-lock-comment-face fixed-pitch)))))
+    (org-table ((nil (:inherit fixed-pitch :height 0.8)))) ;;:foreground "#83a598"
+    (org-tag ((nil (:inherit (shadow fixed-pitch) :weight bold :height 0.8))))
+    (org-verbatim ((nil (:inherit (shadow fixed-pitch)))))
+    (org-block-begin-line ((nil (:inherit fixed-pitch :height 0.8))))
+    (org-block-end-line ((nil (:inherit fixed-pitch :height 0.8))))
+    (org-list-dt ((nil (:inhetir fixed-pitch))))
+    (org-level-3 ((nil (:weight black :height 1.1))))
+    (org-level-2 ((nil (:weight black :height 1.25))))
+    (org-level-1 ((nil (:weight black :weight black :height 1.7))))
+    (org-document-title ((nil (:weight black :height 2.0 :underline nil))))
+    (org-document-author ((nil (:weight black :underline nil))))
+    )
+#+end_src
+
+** Org-reveal
+#+begin_src emacs-lisp
+  (use-package ox-reveal)
+  (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+#+end_src
+
+** Hooks
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook 'variable-pitch-mode)
+  (add-hook 'org-mode-hook 'org-bullets-mode)
+  (add-hook 'org-mode-hook 'visual-line-mode)
+  (add-hook 'org-mode-hook 'adaptive-wrap-prefix-mode)
+  (add-hook 'org-mode-hook 'visual-fill-column-mode)
+  (add-hook 'org-mode-hook 'flyspell-mode)
+#+end_src
+
+* LaTeX
+** AucTeX
+#+begin_src emacs-lisp
+  (use-package auctex
+    :ensure t
+    :defer t)
+#+end_src
+
