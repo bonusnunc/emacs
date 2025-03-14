@@ -1,0 +1,9 @@
+# Ignore todo
+/*
+
+# Excepto estos archivos
+!init.el
+!config.org
+!snippets
+!snippets/*
+!.gitignore
