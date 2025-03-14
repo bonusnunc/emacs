@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: Bloque de código de emacs lisp
+# key: #srcel
+# --
+
+#+begin_src emacs-lisp
+$0
+#+end_src

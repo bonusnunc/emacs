@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name: Título presentación
+# key: +treveal
+# --
+
+#+title: ${1:título}
+#+subtitle: $2
+#+author: Martín Buenahora
+#+reveal_theme: serif
+#+reveal_init_options: slideNumber:"c/t",  width: 1200
+#+options: num:nil toc:nil
+#+options: reveal_title_slide:"<h1>%t</h1><h2>%s</h2><h5>%a</h5>"
+
+$0

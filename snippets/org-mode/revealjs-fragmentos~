@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Reveal-js fragmentos
+# key: #rjsf
+# --
+
+#+ATTR_REVEAL: :frag (appear)
+$0

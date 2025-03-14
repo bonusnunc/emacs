@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Fragmentos
+# key: +frag
+# --
+
+#+ATTR_REVEAL: :frag (appear)
+$1
