@@ -1,5 +1,6 @@
 ICXC + NIKA
- 
+#+STARTUP: show5levels
+
 * Funciones generales
 ** Gestor de basura
 #+begin_src emacs-lisp
@@ -65,6 +66,51 @@ ICXC + NIKA
   (delete-selection-mode t)
 #+end_src
 
+#+begin_src emacs-lisp
+(defun my-delete-word (arg)
+  "Delete characters forward until encountering the end of a word.
+With argument, do this that many times.
+This command does not push text to `kill-ring'."
+  (interactive "p")
+  (delete-region
+   (point)
+   (progn
+     (forward-word arg)
+     (point))))
+
+(defun my-backward-delete-word (arg)
+  "Delete characters backward until encountering the beginning of a word.
+With argument, do this that many times.
+This command does not push text to `kill-ring'."
+  (interactive "p")
+  (my-delete-word (- arg)))
+
+(defun my-delete-line ()
+  "Delete text from current position to end of line char.
+This command does not push text to `kill-ring'."
+  (interactive)
+  (delete-region
+   (point)
+   (progn (end-of-line 1) (point)))
+  (delete-char 1))
+
+(defun my-delete-line-backward ()
+  "Delete text between the beginning of the line to the cursor position.
+This command does not push text to `kill-ring'."
+  (interactive)
+  (let (p1 p2)
+    (setq p1 (point))
+    (beginning-of-line 1)
+    (setq p2 (point))
+    (delete-region p1 p2)))
+
+; bind them to emacs's default shortcut keys:
+(global-set-key (kbd "C-S-k") 'my-delete-line-backward) ; Ctrl+Shift+k
+(global-set-key (kbd "C-k") 'my-delete-line)
+(global-set-key (kbd "M-d") 'my-delete-word)
+(global-set-key (kbd "<M-backspace>") 'my-backward-delete-word)
+#+end_src
+
 ** Mejorar scroll
 #+begin_src emacs-lisp
   (use-package ultra-scroll
@@ -116,28 +162,43 @@ ICXC + NIKA
 #+end_src
 
 ** Tipografías por defecto, etc.
+*** Iconos
 #+begin_src emacs-lisp
   (use-package nerd-icons)
   (use-package all-the-icons)
 #+end_src
 
+*** Tipografías
 #+begin_src emacs-lisp
-    (set-face-attribute 'default nil
-  		      :family "Iosevka Fixed Curly Slab"
-  		      :weight 'medium
-  		      :height 180)
+  (set-face-attribute 'default nil
+    		    :family "Iosevka Fixed Curly Slab"
+  		  :height 180
+   		    :weight 'medium)
   (set-face-attribute 'fixed-pitch nil
-  		      :family "Iosevka Fixed Curly Slab"
-  		      :weight 'medium
-  		      :height 180)
-    (set-face-attribute 'variable-pitch nil
-  		      :family "EB Garamond"
-  		      :height 240)
+    		    :family "Iosevka Fixed Curly Slab"
+    		    :weight 'medium
+    		    :height 180)
+  (set-face-attribute 'mode-line nil
+       		    :family "Iosevka Fixed Curly Slab"
+       		    :weight 'medium
+       		    :height 140)
+  (set-face-attribute 'variable-pitch nil
+    		    :family "EB Garamond"
+    		    :height 240)
+#+end_src
 
-    ;; (set-face-attribute 'mode-line nil
-    ;; 		      :family "Iosevka Fixed Curly Slab"
-    ;; 		      :weight 'medium
-    ;; 		      :height 140)
+*** Ligatures
++begin_src emacs-lisp
+(use-package ligature
+  :config
+  ;; Enable all Iosevka ligatures in programming modes
+  (ligature-set-ligatures 'org-mode '("<---" "<--"  "<<-" "<-" "->" "-->" "--->" "<->" "<-->" "<--->" "<---->" "<!--"
+                                       "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
+                                       "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
+                                       ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
+  ;; Enables ligature checks globally in all buffers. You can also do it
+  ;; per mode with `ligature-mode'.
+  (global-ligature-mode t))
 #+end_src
 
 ** Modeline
@@ -217,14 +278,16 @@ ICXC + NIKA
 
 ** Interfaz
 #+begin_src emacs-lisp
-    (tool-bar-mode -1)
-    (menu-bar-mode -1)
-    (setq use-dialog-box nil)
-    (scroll-bar-mode -1)
-    (tooltip-mode -1)
-    (setq server-client-instructions nil)
-    (setq frame-inhibit-implied-resize t)
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
+  (setq use-dialog-box nil)
+  (scroll-bar-mode -1)
+  (tooltip-mode -1)
+  (setq server-client-instructions nil)
+  (setq frame-inhibit-implied-resize t)
   (setq-default cursor-type '(bar . 2))
+
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
 ** Dashboard
@@ -249,25 +312,6 @@ ICXC + NIKA
 
 #+end_src
 
-+begin_src emacs-lisp
-  (use-package welcome-dashboard
-    :ensure nil ;; when using local file and not straight nor use-package
-    :config
-    (setq welcome-dashboard-latitude 4.80938
-          welcome-dashboard-longitude -74.098     ;; latitude and longitude must be set to show weather information
-          welcome-dashboard-use-nerd-icons t      ;; Use nerd icons instead of all-the-icons
-          welcome-dashboard-path-max-length 75
-          welcome-dashboard-show-file-path t      ;; Hide or show filepath
-          welcome-dashboard-use-fahrenheit nil    ;; show in celcius or fahrenheit.
-          welcome-dashboard-min-left-padding 10
-          welcome-dashboard-image-file "~/Imágenes/640px-Gnu-listen-half.jpg"
-          welcome-dashboard-image-width 200
-          ;; welcome-dashboard-image-height 169
-          welcome-dashboard-max-number-of-todos 5
-          welcome-dashboard-title (concat "Bienvenido " user-full-name))
-    (welcome-dashboard-create-welcome-hook))
-+end_src
-
 * Org-mode
 ** Modo centrado
 #+begin_src emacs-lisp
@@ -289,25 +333,28 @@ ICXC + NIKA
 
 ** Mejorar visualización de ciertas cosas
 #+begin_src emacs-lisp
-    (setq-default org-hide-emphasis-markers t
-		  org-pretty-entities t
-		  org-use-sub-superscripts "{}"
-		  org-startup-with-inline-images t
-		  org-image-actual-width 300
-		  )
-    ;;(font-lock-add-keywords 'org-mode
-    ;;'(("^ *\\([-]\\) "
-    ;;(0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-  (use-package org-appear
-      :hook (org-mode . org-appear-mode))
-    (setq org-ellipsis " ☜")
-#+end_src
+  (setq-default org-hide-emphasis-markers t
+    	      org-pretty-entities t
+    	      org-use-sub-superscripts "{}"
+    	      org-startup-with-inline-images t
+    	      org-image-actual-width 300)
 
-+begin_src emacs-lisp
-    (use-package org-modern
-      :hook (org-mode . org-modern-mode))
-;;      (add-hook 'org-mode-hook #'org-modern-mode)
-+end_src
+  (font-lock-add-keywords 'org-mode
+  			'(("^ *\\([-]\\) "
+  			   (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  (setq org-ellipsis " ☜")
+
+  (use-package org-appear
+    :after org
+    :custom
+    (org-appear-autolinks t)
+    (org-appear-autokeywords t)
+    (org-appear-autoemphasis t)
+    (org-appear-autoentities t)
+    :hook
+    (org-mode . org-appear-mode))
+#+end_src
 
 ** Ajustes tipográficos
 #+begin_src emacs-lisp
@@ -340,6 +387,27 @@ ICXC + NIKA
 #+begin_src emacs-lisp
   (use-package ox-reveal)
   (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+#+end_src
+
+** Ligaduras
+#+begin_src emacs-lisp
+  (add-hook 'prog-mode-hook
+  	  (lambda ()
+  	    (setq prettify-symbols-alist
+  		  '(("---"    . ?―)
+  		    ("->"     . ?→)
+  		    ("<-"     . ?←)
+  		    ("map"    . ?↦)
+  		    ("/="     . ?≠)
+  		    ("!="     . ?≠)
+  		    ("=="     . ?≡)
+  		    ("<="     . ?≤)
+  		    (">="     . ?≥)
+  		    ("&&"     . ?∧)
+  		    ("||"     . ?∨)
+  		    ("sqrt"   . ?√)
+  		    ("..."    . ?…))))
+  	  (prettify-symbols-mode 1))
 #+end_src
 
 ** Hooks
