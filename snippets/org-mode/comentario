@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Comentario
+# key: +comentario
+# --
+#+BEGIN_COMMENT
+$1
+#+END_COMMENT

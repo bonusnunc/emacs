@@ -9,6 +9,7 @@
 #+reveal_theme: serif
 #+reveal_extra_css: presentacion.css
 #+reveal_init_options: slideNumber:"c/t",  width: 1200
+#+language: es
 #+options: num:nil toc:nil
 #+options: reveal_title_slide:"<h1>%t</h1><h2>%s</h2><h5>%a</h5>"
 

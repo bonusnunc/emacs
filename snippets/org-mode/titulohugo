@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Titulo hugo
+# key: +hgtitle
+# --
+#+title: $1
+#+date: $2
+#+description: $3

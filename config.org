@@ -4,23 +4,28 @@ ICXC + NIKA
 * Funciones generales
 ** Gestor de basura
 #+begin_src emacs-lisp
-      (defmacro k-time (&rest body)
+  ;; Set garbage collection threshold to 200MB.
+  ;;(setq gc-cons-threshold 100000000)
+
+
+  ;; 			       )))
+  (setq gc-cons-threshold most-positive-fixnum) ;; Minimize garbage collection during startup
+  ;;(setq gc-cons-threshold (expt 2 23)) ;; The default is 800 kilobytes. Measured in bytes.
+  (setq gc-cons-threshold 100000000)
+  (setq gc-cons-percentage 0.5)
+  ;;(run-with-idle-timer 2 t #'garbage-collect)
+       (defmacro k-time (&rest body)
 	"Measure and return the time it takes evaluating BODY."
 	`(let ((time (current-time)))
 	   ,@body
 	   (float-time (time-since time))))
-
-      ;; Set garbage collection threshold to 200MB.
-      (setq gc-cons-threshold 200000000)
-
-      ;; When idle for 15sec run the GC no matter what.
-      (defvar k-gc-timer
-	(run-with-idle-timer 2 t
-			     (lambda ()
-			       ;;(message "El recolector de basura trabajó por %.06fsegs"
-					(k-time (garbage-collect))
-					;;)
-			       )))
+  ;; When idle for 15sec run the GC no matter what.
+  (defvar k-gc-timer
+    (run-with-idle-timer 2 t
+   		       (lambda ()
+   			 (message "El recolector de basura trabajó por %.06fsegs"
+   				  (k-time (garbage-collect))
+   				  ))))
 #+end_src
 
 ** Gestor de paquetes
@@ -45,11 +50,13 @@ ICXC + NIKA
 
 ** Inicialización
 #+begin_src emacs-lisp
-  (setq inhibit-startup-echo-area-message "tychoish")
-  (setq inhibit-startup-message 't)
+    (setq inhibit-startup-echo-area-message "tychoish")
+    (setq inhibit-startup-message 't)
 
-  (setq inhibit-startup-message t)
-  (setq initial-major-mode 'org-mode)
+    (setq inhibit-startup-message t)
+    (setq initial-major-mode 'org-mode)
+
+    (setq native-comp-speed 2)
 #+end_src
 
 ** Historial de archivos
@@ -63,10 +70,14 @@ ICXC + NIKA
 ** Manipulación de texto
 #+begin_src emacs-lisp
   (electric-pair-mode t) ;; Cerrar automáticamente los paréntesis etc
+  (setq electric-pair-pairs '(
+  			      (?\¿ . ?\?)
+  			      (?\“ . ?\”)
+  			      ))
   (delete-selection-mode t)
 #+end_src
 
-#+begin_src emacs-lisp
++begin_src emacs-lisp
 (defun my-delete-word (arg)
   "Delete characters forward until encountering the end of a word.
 With argument, do this that many times.
@@ -121,6 +132,10 @@ This command does not push text to `kill-ring'."
   :config
   (ultra-scroll-mode 1))
 #+end_src
++begin_src emacs-lisp
+(setq scroll-conservatively 10
+      scroll-margin 15)
+#+end_src
 ** Yasnippet
 #+begin_src emacs-lisp
   (use-package yasnippet
@@ -147,20 +162,6 @@ This command does not push text to `kill-ring'."
   (add-hook 'org-mode-hook 'autorg)
  #+end_src
 * Apariencia
-** Tema
-#+begin_src emacs-lisp
-  (setq custom-safe-themes t)
-  (use-package modus-themes)
-  (use-package ef-themes)
-  (mapc #'disable-theme custom-enabled-themes)
-  (load-theme 'standard-light :no-confirm)
-
-  (use-package auto-dark
-    :custom
-    (auto-dark-themes '((standard-dark) (standard-light)))
-    :init (auto-dark-mode))
-#+end_src
-
 ** Tipografías por defecto, etc.
 *** Iconos
 #+begin_src emacs-lisp
@@ -171,34 +172,49 @@ This command does not push text to `kill-ring'."
 *** Tipografías
 #+begin_src emacs-lisp
   (set-face-attribute 'default nil
-    		    :family "Iosevka Fixed Curly Slab"
-  		  :height 180
+    		    :family "Iosevkada"
+  		  :height 220
    		    :weight 'medium)
   (set-face-attribute 'fixed-pitch nil
-    		    :family "Iosevka Fixed Curly Slab"
+    		    :family "Iosevkada"
     		    :weight 'medium
-    		    :height 180)
+    		    :height 220)
   (set-face-attribute 'mode-line nil
-       		    :family "Iosevka Fixed Curly Slab"
+       		    :family "Iosevkada"
        		    :weight 'medium
-       		    :height 140)
+       		    :height 180)
   (set-face-attribute 'variable-pitch nil
-    		    :family "EB Garamond"
-    		    :height 240)
+    		    :family "Cormorant Garamond Medium"
+    		    :height 280)
 #+end_src
 
 *** Ligatures
-+begin_src emacs-lisp
-(use-package ligature
-  :config
-  ;; Enable all Iosevka ligatures in programming modes
-  (ligature-set-ligatures 'org-mode '("<---" "<--"  "<<-" "<-" "->" "-->" "--->" "<->" "<-->" "<--->" "<---->" "<!--"
-                                       "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
-                                       "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
-                                       ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
-  ;; Enables ligature checks globally in all buffers. You can also do it
-  ;; per mode with `ligature-mode'.
-  (global-ligature-mode t))
+#+begin_src emacs-lisp
+  (use-package ligature
+    :config
+    ;; Enable all Iosevka ligatures in programming modes
+    (ligature-set-ligatures 'prog-mode '("<---" "<--"  "<<-" "<-" "->" "-->" "--->"
+  				       "<->" "<-->" "<--->" "<---->" "<!--"
+                                         "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
+                                         "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
+                                         ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
+    (ligature-set-ligatures 'org-mode '(
+  				      "Qy" "Th"
+  				      "ae"
+  				      "ch" "ck" "ct"
+  				      "ffb" "ffh" "ffi" "ffj" "ffk" "ffl" "ffl" "fft"
+  				      "fn" "ff" "fh" "fi" "fj" "fk" "fp" "ft"
+  				      "oe"
+  				      "qꝫ"
+
+  				      "<---" "<--"  "<<-" "<-" "->" "-->" "--->"
+  				      "<->" "<-->" "<--->" "<---->" "<!--"
+                                        "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
+                                        "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
+                                        ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
+    ;; Enables ligature checks globally in all buffers. You can also do it
+    ;; per mode with `ligature-mode'.
+    (global-ligature-mode t))
 #+end_src
 
 ** Modeline
@@ -290,26 +306,29 @@ This command does not push text to `kill-ring'."
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
-** Dashboard
+** Espaciado
 #+begin_src emacs-lisp
-  (use-package dashboard
-    :ensure t
-    :config
-    (dashboard-setup-startup-hook))
+     ;;(setq-default line-spacing 0.5)
+      ;;(add-text-properties (point-min) (point-max)
+      ;;                   '(line-spacing 0.5 line-height 1.5))
+     ;;(setq-default line-height 1.5)
+  (defun espaciado ()
+      (setq-local line-spacing 0.25))
+  (add-hook 'text-mode-hook 'espaciado)
+  ;;(put-text-property (point-min) (point-max) 'line-height 1.5)
+#+end_src
+** Tema
+#+begin_src emacs-lisp
+  (setq custom-safe-themes t)
+  (use-package standard-themes)
+  ;;(mapc #'disable-theme custom-enabled-themes)
+  (load-theme 'standard-light :no-confirm)
+  (load-theme 'standard-dark :no-confirm)
 
-  (setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name)))
-  (setq dashboard-banner-logo-title "Live free or die")
-  (setq dashboard-startup-banner '("~/Imágenes/gnus/listen.jpg" "~/Imágenes/gnus/head.jpg" "~/Imágenes/gnus/meditate.jpg" "~/Imágenes/gnus/dog.jpg"))
-  (setq dashboard-image-banner-max-width 800)
-  (setq dashboard-image-banner-max-height 400)
-  (setq dashboard-items '((recents   . 3)))
-
-  (setq dashboard-item-names '(("Recent Files:" . "Archivos recientes:")))
-  (setq dashboard-icon-type 'all-the-icons)  ; use `all-the-icons' package
-  (setq dashboard-set-heading-icons t)
-  (setq dashboard-set-file-icons t)
-  (dashboard-modify-heading-icons '((recents   . "file-text")))
-
+  (use-package auto-dark
+    :custom
+    (auto-dark-themes '((standard-dark) (standard-light)))
+    :init (auto-dark-mode))
 #+end_src
 
 * Org-mode
@@ -325,6 +344,11 @@ This command does not push text to `kill-ring'."
 	:hook (org-mode . org-appear-mode))
 #+end_src
 
+** Corrector de ortografía
+#+begin_src emacs-lisp
+  (setq ispell-program-name "hunspell")
+;;  (setq ispell-local-dictionary "es")
+#+end_src
 ** Estilo de los encabezados
 #+begin_src emacs-lisp
   (use-package org-bullets
@@ -354,6 +378,8 @@ This command does not push text to `kill-ring'."
     (org-appear-autoentities t)
     :hook
     (org-mode . org-appear-mode))
+
+  
 #+end_src
 
 ** Ajustes tipográficos
@@ -378,7 +404,7 @@ This command does not push text to `kill-ring'."
     (org-level-3 ((nil (:weight black :height 1.1))))
     (org-level-2 ((nil (:weight black :height 1.25))))
     (org-level-1 ((nil (:weight black :weight black :height 1.7))))
-    (org-document-title ((nil (:weight black :height 2.0 :underline nil))))
+    (org-document-title ((nil (:weight black :height 1.8 :underline nil))))
     (org-document-author ((nil (:weight black :underline nil))))
     )
 #+end_src
@@ -387,27 +413,6 @@ This command does not push text to `kill-ring'."
 #+begin_src emacs-lisp
   (use-package ox-reveal)
   (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
-#+end_src
-
-** Ligaduras
-#+begin_src emacs-lisp
-  (add-hook 'prog-mode-hook
-  	  (lambda ()
-  	    (setq prettify-symbols-alist
-  		  '(("---"    . ?―)
-  		    ("->"     . ?→)
-  		    ("<-"     . ?←)
-  		    ("map"    . ?↦)
-  		    ("/="     . ?≠)
-  		    ("!="     . ?≠)
-  		    ("=="     . ?≡)
-  		    ("<="     . ?≤)
-  		    (">="     . ?≥)
-  		    ("&&"     . ?∧)
-  		    ("||"     . ?∨)
-  		    ("sqrt"   . ?√)
-  		    ("..."    . ?…))))
-  	  (prettify-symbols-mode 1))
 #+end_src
 
 ** Hooks
@@ -427,4 +432,8 @@ This command does not push text to `kill-ring'."
     :ensure t
     :defer t)
 #+end_src
-
+** Hooks
+#+begin_src emacs-lisp
+  (add-hook 'latex-mode-hook 'flyspell-mode)
+  (add-hook 'latex-mode-hook 'display-line-numbers-mode)
+#+end_src
